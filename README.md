@@ -127,10 +127,9 @@ glib-compile-schemas ~/.local/share/gnome-shell/extensions/shellglance@dnlvgl.co
 
 ## License
 
-TODO
+GPL-3.0 - see [LICENSE](LICENSE)
 
 ## Roadmap
 
 - [ ] add screenshots
-- [ ] add license
 - [ ] publish
