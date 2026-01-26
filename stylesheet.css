@@ -1,0 +1,36 @@
+/* ShellGlance Extension Stylesheet */
+
+/* Top bar label styling */
+.shellglance-label {
+    font-family: monospace;
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+/* Error icon styling */
+.shellglance-error {
+    color: #e74c3c;
+    margin-right: 4px;
+}
+
+/* Menu header (command name) */
+.shellglance-menu-header .popup-menu-item {
+    font-weight: bold;
+    font-size: 0.9em;
+    color: #888;
+}
+
+/* Menu output text */
+.shellglance-menu-output {
+    font-family: monospace;
+    font-size: 0.85em;
+    padding: 8px 12px;
+}
+
+/* Menu error output */
+.shellglance-menu-error {
+    font-family: monospace;
+    font-size: 0.85em;
+    padding: 8px 12px;
+    color: #e74c3c;
+}

@@ -1,0 +1,9 @@
+{
+  "uuid": "shellglance@dnlvgl.com",
+  "name": "ShellGlance",
+  "description": "Display terminal command outputs in the top bar",
+  "version": 1,
+  "shell-version": ["49"],
+  "settings-schema": "org.gnome.shell.extensions.shellglance",
+  "url": ""
+}
