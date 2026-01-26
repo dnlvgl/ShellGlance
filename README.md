@@ -90,13 +90,25 @@ sensors | awk '/^Core/ {sum+=$3; count++} END {print sum/count "°C"}'
 
 ```
 
-## Troubleshooting
+## Development
 
-### View Extension Logs
+Once the extension is installed sync changes locally via:
+
+``` bash
+./sync.sh
+```
+
+On first run enable the extension via `gnome-extensions enable shellglance@dnlvgl.com`.
+
+To test changes disable and reenable via the `Extension` app.
+
+### Building Schemas
 
 ```bash
-journalctl -f -o cat /usr/bin/gnome-shell
+glib-compile-schemas schemas/
 ```
+
+## Troubleshooting
 
 ### Recompile Schemas
 
@@ -104,27 +116,6 @@ If settings aren't working, try recompiling:
 
 ```bash
 glib-compile-schemas ~/.local/share/gnome-shell/extensions/shellglance@dnlvgl.com/schemas/
-```
-
-### Extension Not Appearing
-
-1. Verify the extension is in the correct directory
-2. Check that the UUID matches the directory name
-3. Restart GNOME Shell
-4. Check logs for errors
-
-## Development
-
-### Testing in Nested Session
-
-```bash
-dbus-run-session -- gnome-shell --nested --wayland
-```
-
-### Building Schemas
-
-```bash
-glib-compile-schemas schemas/
 ```
 
 ## Resources
@@ -141,7 +132,5 @@ TODO
 ## Roadmap
 
 - [ ] add screenshots
-- [ ] use config file?
 - [ ] add license
-- [x] ui improvements on dropdown: no break between label and command
 - [ ] publish
