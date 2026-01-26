@@ -5,15 +5,8 @@ import GObject from 'gi://GObject';
 import {ExtensionPreferences} from 'resource:///org/gnome/Shell/Extensions/js/extensions/prefs.js';
 
 
-/**
- * Generates a simple UUID for command identification
- */
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
+function generateId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
 
@@ -235,7 +228,7 @@ export default class ShellGlancePreferences extends ExtensionPreferences {
 
     _addNewCommand() {
         const newCommand = {
-            id: generateUUID(),
+            id: generateId(),
             name: 'New Command',
             command: 'echo "Hello, World!"',
             interval: 5,

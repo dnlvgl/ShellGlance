@@ -1,5 +1,6 @@
 import GLib from 'gi://GLib';
 import Gio from 'gi://Gio';
+import GObject from 'gi://GObject';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 
@@ -8,18 +9,6 @@ import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
 import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
-
-
-/**
- * Generates a simple UUID for command identification
- */
-function generateUUID() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
 
 
 /**
@@ -379,13 +368,7 @@ class ShellGlanceIndicator extends PanelMenu.Button {
 
         for (const cmd of enabledCommands) {
             const result = this._commandManager.getResult(cmd.id);
-
-            // Command name as header
-            const headerItem = new PopupMenu.PopupMenuItem(cmd.name || 'Unnamed Command', {
-                reactive: false,
-                style_class: 'shellglance-menu-header',
-            });
-            this._outputSection.addMenuItem(headerItem);
+            const cmdName = cmd.name || 'Unnamed';
 
             // Output content
             let outputText = result.success ? result.output : `Error: ${result.error}`;
@@ -400,7 +383,14 @@ class ShellGlanceIndicator extends PanelMenu.Button {
                 displayLines.push(`... (${lines.length - 10} more lines)`);
             }
 
-            const outputItem = new PopupMenu.PopupMenuItem(displayLines.join('\n'), {
+            // Combine name and output on first line
+            const firstLine = `${cmdName}: ${displayLines[0]}`;
+            const remainingLines = displayLines.slice(1);
+            const fullText = remainingLines.length > 0
+                ? `${firstLine}\n${remainingLines.join('\n')}`
+                : firstLine;
+
+            const outputItem = new PopupMenu.PopupMenuItem(fullText, {
                 reactive: false,
                 style_class: result.success ? 'shellglance-menu-output' : 'shellglance-menu-error',
             });
@@ -425,10 +415,6 @@ class ShellGlanceIndicator extends PanelMenu.Button {
         super.destroy();
     }
 }
-
-// Import GObject for class registration
-import GObject from 'gi://GObject';
-
 
 /**
  * Main Extension class
