@@ -82,29 +82,12 @@ free -h | awk '/^Mem:/ {print $3}'
 # Disk usage
 df -h / | awk 'NR==2 {print $5}'
 
-# Current time
-date +%H:%M
-
 # Network IP
 hostname -I | awk '{print $1}'
 
-# Battery percentage (laptops)
-cat /sys/class/power_supply/BAT0/capacity
-```
+# Temperature
+sensors | awk '/^Core/ {sum+=$3; count++} END {print sum/count "°C"}'
 
-## File Structure
-
-```
-ShellGlance/
-├── metadata.json          # Extension metadata
-├── extension.js           # Main extension code
-├── prefs.js              # Preferences dialog
-├── stylesheet.css         # Custom styling
-├── schemas/
-│   ├── gschemas.compiled  # Compiled schema
-│   └── org.gnome.shell.extensions.shellglance.gschema.xml
-└── icons/
-    └── error-symbolic.svg
 ```
 
 ## Troubleshooting
@@ -152,3 +135,13 @@ glib-compile-schemas schemas/
 
 
 ## License
+
+TODO
+
+## Roadmap
+
+- [ ] add screenshots
+- [ ] use config file?
+- [ ] add license
+- [x] ui improvements on dropdown: no break between label and command
+- [ ] publish
