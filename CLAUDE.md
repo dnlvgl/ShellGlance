@@ -9,28 +9,18 @@ ShellGlance is a GNOME Shell 49 extension that displays terminal command outputs
 ## Development Commands
 
 ```bash
-# Compile GSettings schemas (required after schema changes)
-glib-compile-schemas schemas/
-
-# Deploy to local GNOME Shell extensions folder
-./sync.sh
-
-# Enable extension (after logout/login on Wayland)
-gnome-extensions enable shellglance@dnlvgl.com
-
-# Open preferences
-gnome-extensions prefs shellglance@dnlvgl.com
-
-# View logs
-journalctl -f -o cat /usr/bin/gnome-shell
-
-# Test in nested session (safer for development)
-dbus-run-session -- gnome-shell --nested --wayland
+make install   # First-time install to ~/.local/share/gnome-shell/extensions/
+make update    # Update installed extension and open Extensions app for reload
+make enable    # Enable extension
+make disable   # Disable extension
+make prefs     # Open preferences
+make logs      # Follow GNOME Shell logs
+make zip       # Create distributable zip
 ```
 
 ## Development Workflow
 
-On Wayland, GNOME Shell must be restarted to load extension changes - this requires logout/login. Changes to `prefs.js` can be tested by closing and reopening the preferences window.
+On Wayland, GNOME Shell must be restarted to load extension changes. Use `make update` to copy changes and open the Extensions app - disable/enable the extension there to reload. Changes to `prefs.js` can be tested by closing and reopening the preferences window.
 
 ## Architecture
 

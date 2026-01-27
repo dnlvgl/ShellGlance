@@ -25,23 +25,16 @@ A GNOME Shell 49 extension that displays terminal command outputs in the top bar
    cd ShellGlance
    ```
 
-2. Copy to GNOME Shell extensions directory:
+2. Install the extension:
    ```bash
-   cp -r . ~/.local/share/gnome-shell/extensions/shellglance@dnlvgl.com/
-   ```
-   
-   or sync via script
-   
-   ```bash
-   ./sync.sh
+   make install
    ```
 
-3. Restart GNOME Shell:
-   - **Wayland**: Log out and log back in
+3. Restart GNOME Shell (logout/login on Wayland)
 
 4. Enable the extension:
    ```bash
-   gnome-extensions enable shellglance@dnlvgl.com
+   make enable
    ```
 
 ## Configuration
@@ -92,30 +85,27 @@ sensors | awk '/^Core/ {sum+=$3; count++} END {print sum/count "°C"}'
 
 ## Development
 
-Once the extension is installed sync changes locally via:
-
-``` bash
-./sync.sh
-```
-
-On first run enable the extension via `gnome-extensions enable shellglance@dnlvgl.com`.
-
-To test changes disable and reenable via the `Extension` app.
-
-### Building Schemas
-
 ```bash
-glib-compile-schemas schemas/
+make install   # First-time install
+make update    # Update and open Extensions app for reload
+make enable    # Enable extension
+make disable   # Disable extension
+make prefs     # Open preferences
+make logs      # Follow GNOME Shell logs
+make zip       # Create distributable zip
+make clean     # Remove build artifacts
 ```
+
+To test changes, run `make update` then disable/enable the extension in the Extensions app.
 
 ## Troubleshooting
 
 ### Recompile Schemas
 
-If settings aren't working, try recompiling:
+If settings aren't working, recompile and reinstall:
 
 ```bash
-glib-compile-schemas ~/.local/share/gnome-shell/extensions/shellglance@dnlvgl.com/schemas/
+make update
 ```
 
 ## Resources
@@ -132,6 +122,5 @@ GPL-3.0 - see [LICENSE](LICENSE)
 ## Todos
 
 - [ ] add screenshots
-- [ ] move sync script to makefile
 - [ ] test error states
 - [ ] publish
