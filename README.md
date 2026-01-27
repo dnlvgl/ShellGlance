@@ -87,7 +87,7 @@ sensors | awk '/^Core/ {sum+=$3; count++} END {print sum/count "°C"}'
 
 ```bash
 make install   # First-time install
-make update    # Update and open Extensions app for reload
+make update    # Update and toggle extension for reload
 make enable    # Enable extension
 make disable   # Disable extension
 make prefs     # Open preferences
@@ -122,5 +122,4 @@ GPL-3.0 - see [LICENSE](LICENSE)
 ## Todos
 
 - [ ] add screenshots
-- [ ] test error states
 - [ ] publish
