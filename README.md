@@ -11,6 +11,11 @@ A GNOME Shell 49 extension that displays terminal command outputs in the top bar
 - **Error Handling**: Visual error indicator when commands fail
 - **Configurable Timeout**: Default 10 seconds per command to prevent hanging
 
+## Screenshots
+
+![ShellGlance Overview](screenshots/shellglance-overview.png)
+![ShellGlance Edit](screenshots/shellglance-edit.png)
+
 ## Requirements
 
 - GNOME Shell 49
@@ -118,8 +123,3 @@ make update
 ## License
 
 GPL-3.0 - see [LICENSE](LICENSE)
-
-## Todos
-
-- [ ] add screenshots
-- [ ] publish
