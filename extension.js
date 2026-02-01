@@ -15,6 +15,10 @@ import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
  * CommandRunner - Handles async command execution with timeout
  */
 class CommandRunner {
+    static _result(success, output = '', error = '') {
+        return {success, output: output?.trim() ?? '', error: error?.trim() ?? ''};
+    }
+
     /**
      * Run a shell command asynchronously with timeout
      * @param {string} command - The shell command to execute
@@ -32,50 +36,31 @@ class CommandRunner {
                     Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
                 );
 
-                // Set up timeout
                 timeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, timeout * 1000, () => {
                     cancellable.cancel();
                     proc.force_exit();
                     timeoutId = null;
-                    resolve({
-                        success: false,
-                        output: '',
-                        error: 'Command timed out',
-                    });
+                    resolve(CommandRunner._result(false, '', 'Command timed out'));
                     return GLib.SOURCE_REMOVE;
                 });
 
                 proc.communicate_utf8_async(null, cancellable, (subprocess, result) => {
-                    if (timeoutId !== null) {
+                    if (timeoutId != null) {
                         GLib.source_remove(timeoutId);
                         timeoutId = null;
                     }
 
                     try {
                         const [, stdout, stderr] = subprocess.communicate_utf8_finish(result);
-                        const success = subprocess.get_successful();
-                        resolve({
-                            success,
-                            output: stdout?.trim() ?? '',
-                            error: stderr?.trim() ?? '',
-                        });
+                        resolve(CommandRunner._result(subprocess.get_successful(), stdout, stderr));
                     } catch (e) {
-                        resolve({
-                            success: false,
-                            output: '',
-                            error: e.message,
-                        });
+                        resolve(CommandRunner._result(false, '', e.message));
                     }
                 });
             } catch (e) {
-                if (timeoutId !== null) {
+                if (timeoutId != null)
                     GLib.source_remove(timeoutId);
-                }
-                resolve({
-                    success: false,
-                    output: '',
-                    error: e.message,
-                });
+                resolve(CommandRunner._result(false, '', e.message));
             }
         });
     }
@@ -179,7 +164,7 @@ class CommandManager {
 
     _stopTimer(commandId) {
         const timerId = this._timers.get(commandId);
-        if (timerId !== null && timerId !== undefined) {
+        if (timerId != null) {
             GLib.source_remove(timerId);
             this._timers.delete(commandId);
         }
@@ -192,16 +177,14 @@ class CommandManager {
 
     startAll() {
         for (const command of this._commands) {
-            if (command.enabled) {
+            if (command.enabled)
                 this._startTimer(command);
-            }
         }
     }
 
     stopAll() {
-        for (const [commandId] of this._timers) {
-            this._stopTimer(commandId);
-        }
+        for (const timerId of this._timers.values())
+            GLib.source_remove(timerId);
         this._timers.clear();
     }
 
@@ -211,7 +194,7 @@ class CommandManager {
     }
 
     destroy() {
-        if (this._settingsChangedId !== null) {
+        if (this._settingsChangedId != null) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;
         }
@@ -278,29 +261,18 @@ class ShellGlanceIndicator extends PanelMenu.Button {
         // Separator
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-        // Refresh button
         const refreshItem = new PopupMenu.PopupMenuItem('Refresh All');
-        refreshItem.connect('activate', () => {
-            this._commandManager.refreshAll();
-        });
+        refreshItem.connect('activate', () => this._commandManager.refreshAll());
         this.menu.addMenuItem(refreshItem);
 
-        // Settings button
         const settingsItem = new PopupMenu.PopupMenuItem('Settings');
-        settingsItem.connect('activate', () => {
-            this._extension.openPreferences();
-        });
+        settingsItem.connect('activate', () => this._extension.openPreferences());
         this.menu.addMenuItem(settingsItem);
     }
 
     _connectSignals() {
-        this._commandManager.onResultsChanged(() => {
-            this._updateDisplay();
-        });
-
-        this._settingsChangedId = this._settings.connect('changed', () => {
-            this._updateDisplay();
-        });
+        this._commandManager.onResultsChanged(() => this._updateDisplay());
+        this._settingsChangedId = this._settings.connect('changed', () => this._updateDisplay());
     }
 
     _updateDisplay() {
@@ -309,109 +281,66 @@ class ShellGlanceIndicator extends PanelMenu.Button {
         const maxLength = this._settings.get_int('max-length');
 
         let hasError = false;
-        const outputs = [];
-
-        for (const cmd of enabledCommands) {
+        const outputs = enabledCommands.map(cmd => {
             const result = this._commandManager.getResult(cmd.id);
-
-            if (!result.success) {
+            if (!result.success)
                 hasError = true;
-            }
 
-            let displayText = result.success ? result.output : 'Error';
-
-            // Handle empty output
-            if (displayText === '') {
-                displayText = '...';
-            }
-
-            // Take only first line for top bar
-            const firstLine = displayText.split('\n')[0];
-
-            // Truncate if necessary
+            const text = (result.success ? result.output : 'Error') || '...';
+            const firstLine = text.split('\n')[0];
             const truncated = firstLine.length > maxLength
                 ? firstLine.substring(0, maxLength - 1) + '\u2026'
                 : firstLine;
-
-            // Add name prefix if configured
             const prefix = cmd.name ? `${cmd.name}: ` : '';
-            outputs.push(`${prefix}${truncated}`);
-        }
+            return `${prefix}${truncated}`;
+        });
 
-        // Update top bar label
-        if (outputs.length === 0) {
-            this._label.text = 'ShellGlance';
-        } else {
-            this._label.text = outputs.join(separator);
-        }
-
-        // Update error icon
+        this._label.text = outputs.length > 0 ? outputs.join(separator) : 'ShellGlance';
         this._errorIcon.visible = hasError;
-
-        // Update dropdown menu
         this._updateMenu();
     }
 
     _updateMenu() {
-        // Clear existing items
         this._outputSection.removeAll();
 
         const enabledCommands = this._commandManager.getEnabledCommands();
 
         if (enabledCommands.length === 0) {
-            const emptyItem = new PopupMenu.PopupMenuItem('No commands configured', {
-                reactive: false,
-            });
-            this._outputSection.addMenuItem(emptyItem);
+            this._outputSection.addMenuItem(new PopupMenu.PopupMenuItem(
+                'No commands configured', {reactive: false}));
             return;
         }
 
         for (const cmd of enabledCommands) {
             const result = this._commandManager.getResult(cmd.id);
             const cmdName = cmd.name || 'Unnamed';
+            const outputText = (result.success ? result.output : `Error: ${result.error}`) || '(empty output)';
 
-            // Output content
-            let outputText = result.success ? result.output : `Error: ${result.error}`;
-            if (outputText === '') {
-                outputText = '(empty output)';
-            }
-
-            // Limit output lines in menu
             const lines = outputText.split('\n');
-            const displayLines = lines.slice(0, 10);
-            if (lines.length > 10) {
-                displayLines.push(`... (${lines.length - 10} more lines)`);
-            }
+            const display = lines.slice(0, 10);
+            if (lines.length > 10)
+                display.push(`... (${lines.length - 10} more lines)`);
 
-            // Combine name and output on first line
-            const firstLine = `${cmdName}: ${displayLines[0]}`;
-            const remainingLines = displayLines.slice(1);
-            const fullText = remainingLines.length > 0
-                ? `${firstLine}\n${remainingLines.join('\n')}`
-                : firstLine;
+            const [first, ...rest] = display;
+            const fullText = rest.length > 0
+                ? `${cmdName}: ${first}\n${rest.join('\n')}`
+                : `${cmdName}: ${first}`;
 
-            const outputItem = new PopupMenu.PopupMenuItem(fullText, {
+            this._outputSection.addMenuItem(new PopupMenu.PopupMenuItem(fullText, {
                 reactive: false,
                 style_class: result.success ? 'shellglance-menu-output' : 'shellglance-menu-error',
-            });
-            this._outputSection.addMenuItem(outputItem);
-
-            // Add separator between commands
+            }));
             this._outputSection.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
         }
     }
 
     destroy() {
-        if (this._settingsChangedId !== null) {
+        if (this._settingsChangedId != null) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = null;
         }
-
-        if (this._commandManager) {
-            this._commandManager.destroy();
-            this._commandManager = null;
-        }
-
+        this._commandManager?.destroy();
+        this._commandManager = null;
         super.destroy();
     }
 }

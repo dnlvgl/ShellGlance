@@ -31,68 +31,41 @@ class CommandRow extends Adw.ExpanderRow {
         this._buildUI();
     }
 
+    _addEntry(title, key, fallback, onExtra) {
+        const row = new Adw.EntryRow({title, text: this._command[key] || ''});
+        row.connect('changed', () => {
+            this._command[key] = row.text;
+            onExtra?.(row.text);
+            this._onUpdate(this._command);
+        });
+        this.add_row(row);
+    }
+
+    _addSpin(title, subtitle, key, lower, upper, fallback) {
+        const row = new Adw.SpinRow({
+            title, subtitle,
+            adjustment: new Gtk.Adjustment({
+                lower, upper, step_increment: 1, page_increment: 10,
+                value: this._command[key] ?? fallback,
+            }),
+        });
+        row.connect('notify::value', () => {
+            this._command[key] = row.value;
+            this._onUpdate(this._command);
+        });
+        this.add_row(row);
+    }
+
     _buildUI() {
-        // Name entry
-        const nameRow = new Adw.EntryRow({
-            title: 'Name',
-            text: this._command.name || '',
+        this._addEntry('Name', 'name', '', text => {
+            this.title = text || 'Unnamed Command';
         });
-        nameRow.connect('changed', () => {
-            this._command.name = nameRow.text;
-            this.title = nameRow.text || 'Unnamed Command';
-            this._onUpdate(this._command);
+        this._addEntry('Command', 'command', '', text => {
+            this.subtitle = text || 'No command set';
         });
-        this.add_row(nameRow);
+        this._addSpin('Refresh Interval', 'Seconds between refreshes', 'interval', 1, 3600, 5);
+        this._addSpin('Timeout', 'Maximum seconds to wait for command', 'timeout', 1, 300, 10);
 
-        // Command entry
-        const commandRow = new Adw.EntryRow({
-            title: 'Command',
-            text: this._command.command || '',
-        });
-        commandRow.connect('changed', () => {
-            this._command.command = commandRow.text;
-            this.subtitle = commandRow.text || 'No command set';
-            this._onUpdate(this._command);
-        });
-        this.add_row(commandRow);
-
-        // Interval spin row
-        const intervalRow = new Adw.SpinRow({
-            title: 'Refresh Interval',
-            subtitle: 'Seconds between refreshes',
-            adjustment: new Gtk.Adjustment({
-                lower: 1,
-                upper: 3600,
-                step_increment: 1,
-                page_increment: 10,
-                value: this._command.interval ?? 5,
-            }),
-        });
-        intervalRow.connect('notify::value', () => {
-            this._command.interval = intervalRow.value;
-            this._onUpdate(this._command);
-        });
-        this.add_row(intervalRow);
-
-        // Timeout spin row
-        const timeoutRow = new Adw.SpinRow({
-            title: 'Timeout',
-            subtitle: 'Maximum seconds to wait for command',
-            adjustment: new Gtk.Adjustment({
-                lower: 1,
-                upper: 300,
-                step_increment: 1,
-                page_increment: 10,
-                value: this._command.timeout ?? 10,
-            }),
-        });
-        timeoutRow.connect('notify::value', () => {
-            this._command.timeout = timeoutRow.value;
-            this._onUpdate(this._command);
-        });
-        this.add_row(timeoutRow);
-
-        // Enabled switch row
         const enabledRow = new Adw.SwitchRow({
             title: 'Enabled',
             subtitle: 'Show this command in the top bar',
@@ -104,18 +77,13 @@ class CommandRow extends Adw.ExpanderRow {
         });
         this.add_row(enabledRow);
 
-        // Delete button row
-        const deleteRow = new Adw.ActionRow({
-            title: 'Delete Command',
-        });
+        const deleteRow = new Adw.ActionRow({title: 'Delete Command'});
         const deleteButton = new Gtk.Button({
             label: 'Delete',
             css_classes: ['destructive-action'],
             valign: Gtk.Align.CENTER,
         });
-        deleteButton.connect('clicked', () => {
-            this._onDelete(this._command.id);
-        });
+        deleteButton.connect('clicked', () => this._onDelete(this._command.id));
         deleteRow.add_suffix(deleteButton);
         deleteRow.activatable_widget = deleteButton;
         this.add_row(deleteRow);
@@ -161,9 +129,7 @@ export default class ShellGlancePreferences extends ExtensionPreferences {
             css_classes: ['suggested-action'],
             margin_top: 12,
         });
-        addButton.connect('clicked', () => {
-            this._addNewCommand();
-        });
+        addButton.connect('clicked', () => this._addNewCommand());
         this._commandsGroup.add(addButton);
 
         // General settings group
@@ -178,9 +144,7 @@ export default class ShellGlancePreferences extends ExtensionPreferences {
             title: 'Separator',
             text: this._settings.get_string('separator'),
         });
-        separatorRow.connect('changed', () => {
-            this._settings.set_string('separator', separatorRow.text);
-        });
+        separatorRow.connect('changed', () => this._settings.set_string('separator', separatorRow.text));
         generalGroup.add(separatorRow);
 
         // Max length spin row
@@ -195,9 +159,7 @@ export default class ShellGlancePreferences extends ExtensionPreferences {
                 value: this._settings.get_int('max-length'),
             }),
         });
-        maxLengthRow.connect('notify::value', () => {
-            this._settings.set_int('max-length', maxLengthRow.value);
-        });
+        maxLengthRow.connect('notify::value', () => this._settings.set_int('max-length', maxLengthRow.value));
         generalGroup.add(maxLengthRow);
     }
 
@@ -219,8 +181,8 @@ export default class ShellGlancePreferences extends ExtensionPreferences {
     _addCommandRow(command) {
         const row = new CommandRow(
             command,
-            (updatedCommand) => this._onCommandUpdate(updatedCommand),
-            (commandId) => this._onCommandDelete(commandId)
+            cmd => this._onCommandUpdate(cmd),
+            id => this._onCommandDelete(id)
         );
         this._commandRows.set(command.id, row);
         this._commandsGroup.add(row);
